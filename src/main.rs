@@ -6,6 +6,7 @@ use std::{env, io};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
+#[allow(non_snake_case)]
 struct DosHeader {
     e_magic: u16,
     e_cblp: u16,
@@ -78,6 +79,7 @@ fn read_dos_header(file: &mut File) -> std::io::Result<DosHeader> {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
+#[allow(non_snake_case)]
 struct PeHeader {
     Signature: u32,
     Machine: u16,
@@ -88,6 +90,101 @@ struct PeHeader {
     SizeOfOptionalHeader: u16,
     Characteristics: u16,
 }
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+#[allow(non_snake_case)]
+struct ImageDataDirectory {
+    VirtualAddress: u32,
+    Size: u32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+#[allow(non_snake_case)]
+struct OptionalHeader {
+    Magic: u16,
+    MajorLinkVersion: u8,
+    MinorLinkVersion: u8,
+    SizeOfCode: u32,
+    SizeOfInitializedData: u32,
+    SizeOfUninitializedData: u32,
+    AddressOfEntryPoint: u32,
+    BaseOfCode: u32,
+    ImageBase: u64,
+    SectionAlignment: u32,
+    FileAlignment: u32,
+    MajorOperatingSystemVersion: u16,
+    MinorOperatingSystemVersion: u16,
+    MajorImageVersion: u16,
+    MinorImageVersion: u16,
+    MajorSubsystemVersion: u16,
+    MinorSubsystemVersion: u16,
+    Win32VersionValue: u32,
+    SizeOfImage: u32,
+    SizeOfHeaders: u32,
+    CheckSum: u32,
+    Subsystem: u16,
+    DllCharacteristics: u16,
+    SizeOfStackReserve: u64,
+    SizeOfStackCommit: u64,
+    SizeOfHeapReserve: u64,
+    SizeOfHeapCommit: u64,
+    LoaderFlags: u32,
+    NumberOfRvaAndSizes: u32,
+    DataDirectory: [ImageDataDirectory; 16],
+}
+
+fn read_optional_header(file: &mut File) -> std::io::Result<OptionalHeader> {
+    let mut output = OptionalHeader {
+        Magic: file.read_u16::<LittleEndian>()?,
+        MajorLinkVersion: file.read_u8()?,
+        MinorLinkVersion: file.read_u8()?,
+        SizeOfCode: file.read_u32::<LittleEndian>()?,
+        SizeOfInitializedData: file.read_u32::<LittleEndian>()?,
+        SizeOfUninitializedData: file.read_u32::<LittleEndian>()?,
+        AddressOfEntryPoint: file.read_u32::<LittleEndian>()?,
+        BaseOfCode: file.read_u32::<LittleEndian>()?,
+        ImageBase: file.read_u64::<LittleEndian>()?,
+        SectionAlignment: file.read_u32::<LittleEndian>()?,
+        FileAlignment: file.read_u32::<LittleEndian>()?,
+        MajorOperatingSystemVersion: file.read_u16::<LittleEndian>()?,
+        MinorOperatingSystemVersion: file.read_u16::<LittleEndian>()?,
+        MajorImageVersion: file.read_u16::<LittleEndian>()?,
+        MinorImageVersion: file.read_u16::<LittleEndian>()?,
+        MajorSubsystemVersion: file.read_u16::<LittleEndian>()?,
+        MinorSubsystemVersion: file.read_u16::<LittleEndian>()?,
+        Win32VersionValue: file.read_u32::<LittleEndian>()?,
+        SizeOfImage: file.read_u32::<LittleEndian>()?,
+        SizeOfHeaders: file.read_u32::<LittleEndian>()?,
+        CheckSum: file.read_u32::<LittleEndian>()?,
+        Subsystem: file.read_u16::<LittleEndian>()?,
+        DllCharacteristics: file.read_u16::<LittleEndian>()?,
+        SizeOfStackReserve: file.read_u64::<LittleEndian>()?,
+        SizeOfStackCommit: file.read_u64::<LittleEndian>()?,
+        SizeOfHeapReserve: file.read_u64::<LittleEndian>()?,
+        SizeOfHeapCommit: file.read_u64::<LittleEndian>()?,
+        LoaderFlags: file.read_u32::<LittleEndian>()?,
+        NumberOfRvaAndSizes: file.read_u32::<LittleEndian>()?,
+        DataDirectory: [ImageDataDirectory {
+            VirtualAddress: 0,
+            Size: 0,
+        }; 16],
+    };
+
+    for i in 0..16 {
+        output.DataDirectory[i] = ImageDataDirectory {
+            VirtualAddress: file.read_u32::<LittleEndian>()?,
+            Size: file.read_u32::<LittleEndian>()?,
+        };
+    }
+
+    Ok(output)
+}
+
+// Technically it should be like:
+// DOS_HEADER
+// NT_HEADER { FILE_HEADER, OPTIONAL_HEADER }
 
 fn read_pe_header(file: &mut File, offset: u64) -> std::io::Result<PeHeader> {
     file.seek(SeekFrom::Start(offset))?;
