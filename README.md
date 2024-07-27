@@ -149,9 +149,9 @@ IMAGE_OPTIONAL_HEADER: OptionalHeader {
 }
 ```
 ## TODO:
-- Read Optional Header
-- Read sections
-- Read imports/exports
-- Read strings
-- Read hash md5/sha1
-- (maybe) add gui
+- [x] Read Optional Header
+- [ ] Read sections
+- [ ] Read imports/exports
+- [ ] Read strings
+- [ ] Read hash md5/sha1
+- [ ] (maybe) add gui
