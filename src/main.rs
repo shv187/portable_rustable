@@ -234,7 +234,12 @@ fn main() {
                 Ok(pe_header) => {
                     println!("PE_HEADER: {:#x?}", pe_header);
 
-                    // read optional header
+                    match read_optional_header(&mut file) {
+                        Ok(optional_header) => {
+                            println!("IMAGE_OPTIONAL_HEADER: {:#x?}", optional_header);
+                        }
+                        Err(e) => eprintln!("ERROR: {}", e),
+                    }
                 }
                 Err(e) => eprintln!("ERROR: {}", e),
             }
