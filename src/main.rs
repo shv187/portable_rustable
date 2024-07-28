@@ -1,4 +1,5 @@
 use byteorder::{LittleEndian, ReadBytesExt};
+use std::fmt;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
@@ -89,6 +90,29 @@ struct PeHeader {
     NumberOfSymbols: u32,
     SizeOfOptionalHeader: u16,
     Characteristics: u16,
+}
+
+fn read_pe_header(file: &mut File, offset: u64) -> std::io::Result<PeHeader> {
+    file.seek(SeekFrom::Start(offset))?;
+
+    let signature = file.read_u32::<LittleEndian>()?;
+    if signature != 0x00004550 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid PE header signature",
+        ));
+    }
+
+    Ok(PeHeader {
+        Signature: signature,
+        Machine: file.read_u16::<LittleEndian>()?,
+        NumberOfSections: file.read_u16::<LittleEndian>()?,
+        TimeDateStamp: file.read_u32::<LittleEndian>()?,
+        PointerToSymbolTable: file.read_u32::<LittleEndian>()?,
+        NumberOfSymbols: file.read_u32::<LittleEndian>()?,
+        SizeOfOptionalHeader: file.read_u16::<LittleEndian>()?,
+        Characteristics: file.read_u16::<LittleEndian>()?,
+    })
 }
 
 #[repr(C)]
@@ -182,31 +206,72 @@ fn read_optional_header(file: &mut File) -> std::io::Result<OptionalHeader> {
     Ok(output)
 }
 
+// ^
 // Technically it should be like:
 // DOS_HEADER
 // NT_HEADER { FILE_HEADER, OPTIONAL_HEADER }
 
-fn read_pe_header(file: &mut File, offset: u64) -> std::io::Result<PeHeader> {
-    file.seek(SeekFrom::Start(offset))?;
+#[derive(Clone, Copy)]
+struct SectionName([u8; 8]);
 
-    let signature = file.read_u32::<LittleEndian>()?;
-    if signature != 0x00004550 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "Invalid PE header signature",
-        ));
+impl fmt::Debug for SectionName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = String::from_utf8_lossy(&self.0);
+        let name = name.trim_end_matches('\0');
+        write!(f, "{}", name)
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+#[allow(non_snake_case)]
+struct SectionHeader {
+    Name: SectionName,
+    VirtualSize: u32,
+    VirtualAddress: u32,
+    SizeOfRawData: u32,
+    PointerToRawData: u32,
+    PointerToRelocations: u32,
+    PointerToLinenumbers: u32,
+    NumberOfRelocations: u16,
+    NumberOfLinenumbers: u16,
+    Characteristics: u32,
+}
+
+fn read_section_headers(
+    file: &mut File,
+    number_of_sections: u16,
+    optional_header_size: u16,
+    pe_header_offset: u64,
+) -> std::io::Result<Vec<SectionHeader>> {
+    let section_header_offset =
+        pe_header_offset + (std::mem::size_of::<PeHeader>() as u64) + (optional_header_size as u64);
+
+    file.seek(SeekFrom::Start(section_header_offset))?;
+
+    let mut section_headers = Vec::new();
+
+    for _ in 0..number_of_sections {
+        let mut name = [0u8; 8];
+        file.read_exact(&mut name)?;
+
+        let section_header = SectionHeader {
+            Name: SectionName(name),
+            VirtualSize: file.read_u32::<LittleEndian>()?,
+            VirtualAddress: file.read_u32::<LittleEndian>()?,
+            SizeOfRawData: file.read_u32::<LittleEndian>()?,
+            PointerToRawData: file.read_u32::<LittleEndian>()?,
+            PointerToRelocations: file.read_u32::<LittleEndian>()?,
+            PointerToLinenumbers: file.read_u32::<LittleEndian>()?,
+            NumberOfRelocations: file.read_u16::<LittleEndian>()?,
+            NumberOfLinenumbers: file.read_u16::<LittleEndian>()?,
+            Characteristics: file.read_u32::<LittleEndian>()?,
+        };
+
+        section_headers.push(section_header);
     }
 
-    Ok(PeHeader {
-        Signature: signature,
-        Machine: file.read_u16::<LittleEndian>()?,
-        NumberOfSections: file.read_u16::<LittleEndian>()?,
-        TimeDateStamp: file.read_u32::<LittleEndian>()?,
-        PointerToSymbolTable: file.read_u32::<LittleEndian>()?,
-        NumberOfSymbols: file.read_u32::<LittleEndian>()?,
-        SizeOfOptionalHeader: file.read_u16::<LittleEndian>()?,
-        Characteristics: file.read_u16::<LittleEndian>()?,
-    })
+    Ok(section_headers)
 }
 
 fn main() {
@@ -237,6 +302,19 @@ fn main() {
                     match read_optional_header(&mut file) {
                         Ok(optional_header) => {
                             println!("IMAGE_OPTIONAL_HEADER: {:#x?}", optional_header);
+
+                            match read_section_headers(
+                                &mut file,
+                                pe_header.NumberOfSections,
+                                pe_header.SizeOfOptionalHeader,
+                                pe_header_offset as u64,
+                            ) {
+                                Ok(section_header) => {
+                                    println!("Sections:");
+                                    println!("{:#x?}", section_header);
+                                }
+                                Err(e) => eprintln!("ERROR: {}", e),
+                            }
                         }
                         Err(e) => eprintln!("ERROR: {}", e),
                     }

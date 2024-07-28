@@ -147,10 +147,97 @@ IMAGE_OPTIONAL_HEADER: OptionalHeader {
         },
     ],
 }
+Sections:
+[
+    SectionHeader {
+        Name: .text,
+        VirtualSize: 0x52dbd,
+        VirtualAddress: 0x1000,
+        SizeOfRawData: 0x52e00,
+        PointerToRawData: 0x400,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0x60000020,
+    },
+    SectionHeader {
+        Name: .rdata,
+        VirtualSize: 0x1b78c,
+        VirtualAddress: 0x54000,
+        SizeOfRawData: 0x1b800,
+        PointerToRawData: 0x53200,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0x40000040,
+    },
+    SectionHeader {
+        Name: .data,
+        VirtualSize: 0x5d64,
+        VirtualAddress: 0x70000,
+        SizeOfRawData: 0x3e00,
+        PointerToRawData: 0x6ea00,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0xc0000040,
+    },
+    SectionHeader {
+        Name: .gfids,
+        VirtualSize: 0x184,
+        VirtualAddress: 0x76000,
+        SizeOfRawData: 0x200,
+        PointerToRawData: 0x72800,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0x40000040,
+    },
+    SectionHeader {
+        Name: .tls,
+        VirtualSize: 0x9,
+        VirtualAddress: 0x77000,
+        SizeOfRawData: 0x200,
+        PointerToRawData: 0x72a00,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0xc0000040,
+    },
+    SectionHeader {
+        Name: .rsrc,
+        VirtualSize: 0x83590,
+        VirtualAddress: 0x78000,
+        SizeOfRawData: 0x83600,
+        PointerToRawData: 0x72c00,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0x40000040,
+    },
+    SectionHeader {
+        Name: .reloc,
+        VirtualSize: 0x5798,
+        VirtualAddress: 0xfc000,
+        SizeOfRawData: 0x5800,
+        PointerToRawData: 0xf6200,
+        PointerToRelocations: 0x0,
+        PointerToLinenumbers: 0x0,
+        NumberOfRelocations: 0x0,
+        NumberOfLinenumbers: 0x0,
+        Characteristics: 0x42000040,
+    },
+]
 ```
 ## TODO:
 - [x] Read Optional Header
-- [ ] Read sections
+- [x] Read sections
 - [ ] Read imports/exports
 - [ ] Read strings
 - [ ] Read hash md5/sha1
