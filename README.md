@@ -1,4 +1,7 @@
 # portable_rustable
+## Notes:
+Archving it for now, as I decided to switch my focus into something more important(Will public it soonTM...)
+Eventually I might recreate and improve this project in c++, as with my current knowledge It's painful to use rust...(don't bite me, I really like a lot of things about this language...)
 ## Usage:
 `rustable_executable.exe <file_path>`
 ## Example of output:
